@@ -93,6 +93,17 @@ elif page == "👥 Students":
     st.subheader("All Students")
     df_students = pd.read_sql("SELECT * FROM students", conn)
     st.dataframe(df_students, use_container_width=True)
+    st.subheader("Delete a Student")
+student_to_delete = st.selectbox("Select Student ID to Delete", options=df_students['id'].tolist() if not df_students.empty else [])
+if st.button("Delete Student") and student_to_delete:
+    # Delete related records first (to avoid errors)
+    cursor.execute("DELETE FROM enrollments WHERE student_id = ?", (student_to_delete,))
+    cursor.execute("DELETE FROM attendance WHERE student_id = ?", (student_to_delete,))
+    cursor.execute("DELETE FROM grades WHERE student_id = ?", (student_to_delete,))
+    cursor.execute("DELETE FROM students WHERE id = ?", (student_to_delete,))
+    conn.commit()
+    st.success("Student deleted!")
+    st.rerun()  # Refresh the page
 
 # ======================= TEACHERS =======================
 elif page == "👩‍🏫 Teachers":
@@ -110,6 +121,18 @@ elif page == "👩‍🏫 Teachers":
 
     df_teachers = pd.read_sql("SELECT * FROM teachers", conn)
     st.dataframe(df_teachers, use_container_width=True)
+    st.subheader("Delete a Teacher")
+teacher_to_delete = st.selectbox("Select Teacher ID to Delete", options=df_teachers['id'].tolist())
+if st.button("Delete Teacher") and teacher_to_delete:
+    # Careful: Can't delete if they have classes
+    cursor.execute("SELECT COUNT(*) FROM classes WHERE teacher_id = ?", (teacher_to_delete,))
+    if cursor.fetchone()[0] > 0:
+        st.error("Can't delete: Teacher has classes assigned!")
+    else:
+        cursor.execute("DELETE FROM teachers WHERE id = ?", (teacher_to_delete,))
+        conn.commit()
+        st.success("Teacher deleted!")
+        st.rerun()
 
 # ======================= CLASSES =======================
 elif page == "📚 Classes":
@@ -135,8 +158,22 @@ elif page == "📚 Classes":
         FROM classes c JOIN teachers t ON c.teacher_id = t.id
     ''', conn)
     st.dataframe(df_classes, use_container_width=True)
+    with tab1:  # Enrolled Students tab
+    # ... existing code ...
+    st.subheader("Remove Enrollment")
+    enrolled_ids = df_enrolled['id'].tolist() if not df_enrolled.empty else []
+    student_to_remove = st.selectbox("Select Student ID to Remove from Class", options=enrolled_ids)
+    if st.button("Remove from Class") and student_to_remove:
+        cursor.execute("DELETE FROM enrollments WHERE class_id = ? AND student_id = ?", (class_id, student_to_remove))
+        # Also delete their attendance/grades in this class?
+        cursor.execute("DELETE FROM attendance WHERE class_id = ? AND student_id = ?", (class_id, student_to_remove))
+        cursor.execute("DELETE FROM grades WHERE class_id = ? AND student_id = ?", (class_id, student_to_remove))
+        conn.commit()
+        st.success("Student removed from class!")
+        st.rerun()
 
     st.subheader("Class Details & Enrollment")
+
     class_options = dict(zip(df_classes.class_name, df_classes.id))
     selected_class = st.selectbox("Select Class to View/Manage", options=list(class_options.keys()))
 
@@ -215,5 +252,6 @@ elif page == "➕ Add Data":
 
 st.sidebar.markdown("---")
 st.sidebar.info("Data saved in `classroom.db`")
+
 
 # Close connection at end (Streamlit reruns whole script, but it's fine for SQLite)
