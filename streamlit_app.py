@@ -38,6 +38,11 @@ st.markdown("""
         border-radius: 12px;
         overflow: hidden;
     }
+    .stTabs [data-baseweb="tab"] {
+        font-weight: 600;
+        font-size: 1.1rem;
+        padding: 1rem 1.5rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -55,7 +60,6 @@ st.markdown("---")
 conn = sqlite3.connect('classroom.db', check_same_thread=False)
 cursor = conn.cursor()
 
-# Tables
 cursor.execute('''CREATE TABLE IF NOT EXISTS departments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE
@@ -81,7 +85,6 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS students (
     age INTEGER,
     gender TEXT,
     phone TEXT,
-    dob TEXT,
     email TEXT UNIQUE
 )''')
 
@@ -121,11 +124,83 @@ if page == "Dashboard":
 
     st.metric("Total Registrations", pd.read_sql("SELECT COUNT(*) FROM registrations", conn).iloc[0,0])
 
+# ======================= STUDENTS =======================
+elif page == "Students":
+    st.header("Student Management")
+
+    tab_view, tab_add, tab_search, tab_delete = st.tabs(["📋 View", "➕ Add", "🔍 Search", "🗑️ Delete"])
+
+    with tab_view:
+        st.subheader("All Students")
+        df_students = pd.read_sql("SELECT id, name, email, phone, age, gender FROM students", conn)
+        st.dataframe(df_students, use_container_width=True)
+        if st.button("Refresh"):
+            st.rerun()
+
+    with tab_add:
+        st.subheader("Add New Student")
+        with st.form("add_student"):
+            col1, col2 = st.columns(2)
+            with col1:
+                name = st.text_input("Full Name")
+                email = st.text_input("Email")
+                phone = st.text_input("Phone")
+            with col2:
+                age = st.number_input("Age", min_value=1)
+                gender = st.selectbox("Gender", ["Male", "Female", "Other"])
+            submitted = st.form_submit_button("Add Student")
+            if submitted and name and email:
+                try:
+                    cursor.execute("INSERT INTO students (name, age, gender, phone, email) VALUES (?, ?, ?, ?, ?)",
+                                   (name, age, gender, phone, email))
+                    conn.commit()
+                    st.success("Student added!")
+                    st.rerun()
+                except sqlite3.IntegrityError:
+                    st.error("Email already exists.")
+
+    with tab_search:
+        st.subheader("Search Students")
+        search = st.text_input("Search by name, email, or phone")
+        if search:
+            df_search = pd.read_sql("""
+                SELECT id, name, email, phone, age, gender 
+                FROM students 
+                WHERE name LIKE ? OR email LIKE ? OR phone LIKE ?
+            """, conn, params=(f"%{search}%", f"%{search}%", f"%{search}%"))
+            st.dataframe(df_search, use_container_width=True)
+
+    with tab_delete:
+        st.subheader("Delete Student")
+        df_students = pd.read_sql("SELECT id, name FROM students", conn)
+        if not df_students.empty:
+            student_to_delete = st.selectbox("Select Student to Delete", df_students['name'])
+            if st.button("🛑 Permanently Delete", type="primary"):
+                student_id = df_students[df_students['name'] == student_to_delete]['id'].iloc[0]
+                cursor.execute("DELETE FROM students WHERE id = ?", (student_id,))
+                cursor.execute("DELETE FROM registrations WHERE student_id = ?", (student_id,))
+                conn.commit()
+                st.success("Student deleted!")
+                st.rerun()
+        else:
+            st.info("No students to delete.")
+
+
 # ======================= DEPARTMENTS =======================
 elif page == "Departments":
-    st.header("Manage Departments")
+    st.header("Department Management")
 
-    with st.expander("Add New Department"):
+    tab_view, tab_add, tab_search, tab_delete = st.tabs(["📋 View", "➕ Add", "🔍 Search", "🗑️ Delete"])
+
+    with tab_view:
+        st.subheader("All Departments")
+        df_depts = pd.read_sql("SELECT id, name FROM departments", conn)
+        st.dataframe(df_depts, use_container_width=True)
+        if st.button("Refresh"):
+            st.rerun()
+
+    with tab_add:
+        st.subheader("Add New Department")
         with st.form("add_dept"):
             name = st.text_input("Department Name")
             submitted = st.form_submit_button("Add Department")
@@ -138,47 +213,101 @@ elif page == "Departments":
                 except sqlite3.IntegrityError:
                     st.error("Department already exists.")
 
-    st.subheader("All Departments")
-    df_depts = pd.read_sql("SELECT id, name FROM departments", conn)
-    st.dataframe(df_depts, use_container_width=True)
+    with tab_search:
+        st.subheader("Search Departments")
+        search = st.text_input("Search by name")
+        if search:
+            df_search = pd.read_sql("SELECT id, name FROM departments WHERE name LIKE ?", conn, params=(f"%{search}%",))
+            st.dataframe(df_search, use_container_width=True)
 
-    if not df_depts.empty and st.button("Refresh"):
-        st.rerun()
+    with tab_delete:
+        st.subheader("Delete Department")
+        df_depts = pd.read_sql("SELECT id, name FROM departments", conn)
+        if not df_depts.empty:
+            dept_to_delete = st.selectbox("Select Department to Delete", df_depts['name'])
+            if st.button("🛑 Permanently Delete", type="primary"):
+                dept_id = df_depts[df_depts['name'] == dept_to_delete]['id'].iloc[0]
+                cursor.execute("DELETE FROM departments WHERE id = ?", (dept_id,))
+                conn.commit()
+                st.success("Department deleted!")
+                st.rerun()
+        else:
+            st.info("No departments to delete.")
 
 # ======================= COURSES =======================
 elif page == "Courses":
-    st.header("Manage Courses")
+    st.header("Course Management")
 
-    depts = pd.read_sql("SELECT id, name FROM departments", conn)
+    tab_view, tab_add, tab_search, tab_delete = st.tabs(["📋 View", "➕ Add", "🔍 Search", "🗑️ Delete"])
 
-    with st.expander("Add New Course"):
-        with st.form("add_course"):
-            name = st.text_input("Course Name")
-            dept = st.selectbox("Department", depts['name'].tolist()) if not depts.empty else st.warning("Add a department first")
-            fee = st.number_input("Course Fee", min_value=0.0)
-            submitted = st.form_submit_button("Add Course")
-            if submitted and name and not depts.empty:
-                dept_id = depts[depts['name'] == dept]['id'].iloc[0]
-                cursor.execute("INSERT INTO courses (name, department_id, fee) VALUES (?, ?, ?)", (name, dept_id, fee))
+    with tab_view:
+        st.subheader("All Courses")
+        df_courses = pd.read_sql('''
+            SELECT c.id, c.name, d.name AS department, c.fee
+            FROM courses c JOIN departments d ON c.department_id = d.id
+        ''', conn)
+        st.dataframe(df_courses, use_container_width=True)
+        if st.button("Refresh"):
+            st.rerun()
+
+    with tab_add:
+        st.subheader("Add New Course")
+        depts = pd.read_sql("SELECT id, name FROM departments", conn)
+        if depts.empty:
+            st.warning("Add a department first.")
+        else:
+            with st.form("add_course"):
+                name = st.text_input("Course Name")
+                dept = st.selectbox("Department", depts['name'].tolist())
+                fee = st.number_input("Course Fee", min_value=0.0)
+                submitted = st.form_submit_button("Add Course")
+                if submitted and name:
+                    dept_id = depts[depts['name'] == dept]['id'].iloc[0]
+                    cursor.execute("INSERT INTO courses (name, department_id, fee) VALUES (?, ?, ?)", (name, dept_id, fee))
+                    conn.commit()
+                    st.success("Course added!")
+                    st.rerun()
+
+    with tab_search:
+        st.subheader("Search Courses")
+        search = st.text_input("Search by course name or department")
+        if search:
+            df_search = pd.read_sql('''
+                SELECT c.id, c.name, d.name AS department, c.fee
+                FROM courses c JOIN departments d ON c.department_id = d.id
+                WHERE c.name LIKE ? OR d.name LIKE ?
+            ''', conn, params=(f"%{search}%", f"%{search}%"))
+            st.dataframe(df_search, use_container_width=True)
+
+    with tab_delete:
+        st.subheader("Delete Course")
+        df_courses = pd.read_sql("SELECT id, name FROM courses", conn)
+        if not df_courses.empty:
+            course_to_delete = st.selectbox("Select Course to Delete", df_courses['name'])
+            if st.button("🛑 Permanently Delete", type="primary"):
+                course_id = df_courses[df_courses['name'] == course_to_delete]['id'].iloc[0]
+                cursor.execute("DELETE FROM courses WHERE id = ?", (course_id,))
                 conn.commit()
-                st.success("Course added!")
+                st.success("Course deleted!")
                 st.rerun()
-
-    st.subheader("All Courses")
-    df_courses = pd.read_sql('''
-        SELECT c.id, c.name, d.name AS department, c.fee
-        FROM courses c JOIN departments d ON c.department_id = d.id
-    ''', conn)
-    st.dataframe(df_courses, use_container_width=True)
-
-    if st.button("Refresh Courses"):
-        st.rerun()
+        else:
+            st.info("No courses to delete.")
 
 # ======================= TEACHERS =======================
 elif page == "Teachers":
-    st.header("Manage Teachers")
+    st.header("Teacher Management")
 
-    with st.expander("Add New Teacher"):
+    tab_view, tab_add, tab_search, tab_delete = st.tabs(["📋 View", "➕ Add", "🔍 Search", "🗑️ Delete"])
+
+    with tab_view:
+        st.subheader("All Teachers")
+        df_teachers = pd.read_sql("SELECT id, name, subject FROM teachers", conn)
+        st.dataframe(df_teachers, use_container_width=True)
+        if st.button("Refresh"):
+            st.rerun()
+
+    with tab_add:
+        st.subheader("Add New Teacher")
         with st.form("add_teacher"):
             name = st.text_input("Teacher Name")
             subject = st.text_input("Subject Taught")
@@ -189,46 +318,27 @@ elif page == "Teachers":
                 st.success("Teacher added!")
                 st.rerun()
 
-    st.subheader("All Teachers")
-    df_teachers = pd.read_sql("SELECT id, name, subject FROM teachers", conn)
-    st.dataframe(df_teachers, use_container_width=True)
+    with tab_search:
+        st.subheader("Search Teachers")
+        search = st.text_input("Search by name or subject")
+        if search:
+            df_search = pd.read_sql("SELECT id, name, subject FROM teachers WHERE name LIKE ? OR subject LIKE ?", conn, params=(f"%{search}%", f"%{search}%"))
+            st.dataframe(df_search, use_container_width=True)
 
-    if st.button("Refresh Teachers"):
-        st.rerun()
+    with tab_delete:
+        st.subheader("Delete Teacher")
+        df_teachers = pd.read_sql("SELECT id, name FROM teachers", conn)
+        if not df_teachers.empty:
+            teacher_to_delete = st.selectbox("Select Teacher to Delete", df_teachers['name'])
+            if st.button("🛑 Permanently Delete", type="primary"):
+                teacher_id = df_teachers[df_teachers['name'] == teacher_to_delete]['id'].iloc[0]
+                cursor.execute("DELETE FROM teachers WHERE id = ?", (teacher_id,))
+                conn.commit()
+                st.success("Teacher deleted!")
+                st.rerun()
+        else:
+            st.info("No teachers to delete.")
 
-# ======================= STUDENTS =======================
-elif page == "Students":
-    st.header("Manage Students")
-
-    with st.expander("Add New Student"):
-        with st.form("add_student"):
-            col1, col2 = st.columns(2)
-            with col1:
-                name = st.text_input("Full Name")
-                email = st.text_input("Email")
-                phone = st.text_input("Phone")
-            with col2:
-                age = st.number_input("Age", min_value=1)
-                gender = st.selectbox("Gender", ["Male", "Female", "Other"])
-              
-            submitted = st.form_submit_button("Add Student")
-            if submitted and name and email:
-                try:
-                    cursor.execute("INSERT INTO students (name, age, gender, phone, email) VALUES (?, ?, ?, ?, ?)",
-                                   (name, age, gender, phone, str(dob), email))
-                    conn.commit()
-                    st.success("Student added!")
-                    st.rerun()
-                except sqlite3.IntegrityError:
-                    st.error("Email already exists.")
-
-    st.subheader("All Students")
-    df_students = pd.read_sql("SELECT id, name, email, phone, age, gender,  FROM students", conn)
-    st.dataframe(df_students, use_container_width=True)
-
-    if st.button("Refresh Students"):
-        st.rerun()
-       
 
 # ======================= REGISTRATION FORM =======================
 elif page == "Registration Form":
@@ -246,12 +356,10 @@ elif page == "Registration Form":
     else:
         with st.form("registration_form"):
             st.subheader("Register Student in Course")
-
             student_name = st.selectbox("Select Student", students['name'].tolist())
             teacher_name = st.selectbox("Select Teacher", teachers['name'].tolist())
             course_name = st.selectbox("Select Course", courses['name'].tolist())
 
-            # Auto-fill department and fee
             selected_course = courses[courses['name'] == course_name].iloc[0]
             st.info(f"**Department:** {selected_course['dept']}")
             st.info(f"**Course Fee:** ${selected_course['fee']:.2f}")
@@ -284,5 +392,8 @@ elif page == "Registration Form":
 
 st.caption("Built with Streamlit • Professional Education Management • 2025")
 
+  
+
+               
 
 
