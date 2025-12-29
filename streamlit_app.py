@@ -197,33 +197,38 @@ elif page == "Teachers":
         st.rerun()
 
 # ======================= STUDENTS =======================
-with st.expander("Add New Student"):
-    with st.form("add_student"):
-        col1, col2 = st.columns(2)
-        with col1:
-            name = st.text_input("Full Name")
-            email = st.text_input("Email")
-            phone = st.text_input("Phone")
-        with col2:
-            age = st.number_input("Age", min_value=1)
-            gender = st.selectbox("Gender", ["Male", "Female", "Other"])
-            dob = st.date_input(
-                "Date of Birth",
-                value=datetime(2000, 1, 1),
-                min_value=datetime(1900, 1, 1),
-                max_value=datetime(2100, 1, 1)
-            )
-        submitted = st.form_submit_button("Add Student")
-        if submitted and name and email:
-            try:
-                cursor.execute("INSERT INTO students (name, age, gender, phone, dob, email) VALUES (?, ?, ?, ?, ?, ?)",
-                               (name, age, gender, phone, str(dob), email))
-                conn.commit()
-                st.success("Student added!")
-                st.rerun()
-            except sqlite3.IntegrityError:
-                st.error("Email already exists.")
+elif page == "Students":
+    st.header("Manage Students")
 
+    with st.expander("Add New Student"):
+        with st.form("add_student"):
+            col1, col2 = st.columns(2)
+            with col1:
+                name = st.text_input("Full Name")
+                email = st.text_input("Email")
+                phone = st.text_input("Phone")
+            with col2:
+                age = st.number_input("Age", min_value=1)
+                gender = st.selectbox("Gender", ["Male", "Female", "Other"])
+              
+            submitted = st.form_submit_button("Add Student")
+            if submitted and name and email:
+                try:
+                    cursor.execute("INSERT INTO students (name, age, gender, phone, email) VALUES (?, ?, ?, ?, ?)",
+                                   (name, age, gender, phone, str(dob), email))
+                    conn.commit()
+                    st.success("Student added!")
+                    st.rerun()
+                except sqlite3.IntegrityError:
+                    st.error("Email already exists.")
+
+    st.subheader("All Students")
+    df_students = pd.read_sql("SELECT id, name, email, phone, age, gender,  FROM students", conn)
+    st.dataframe(df_students, use_container_width=True)
+
+    if st.button("Refresh Students"):
+        st.rerun()
+       
 
 # ======================= REGISTRATION FORM =======================
 elif page == "Registration Form":
@@ -278,5 +283,6 @@ elif page == "Registration Form":
         st.rerun()
 
 st.caption("Built with Streamlit • Professional Education Management • 2025")
+
 
 
