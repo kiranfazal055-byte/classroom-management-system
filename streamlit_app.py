@@ -210,7 +210,13 @@ elif page == "Students":
             with col2:
                 age = st.number_input("Age", min_value=1)
                 gender = st.selectbox("Gender", ["Male", "Female", "Other"])
-                dob = st.date_input("Date of Birth")
+               dob = st.date_input(
+    "Date of Birth",
+    value=datetime(2000, 1, 1),  # Reasonable default (change if you want)
+    min_value=datetime(1900, 1, 1),  # Allows very old dates
+    max_value=datetime(2100, 1, 1),  # Allows far future if needed
+    format="YYYY-MM-DD"  # Clean display
+)
             submitted = st.form_submit_button("Add Student")
             if submitted and name and email:
                 try:
@@ -282,3 +288,4 @@ elif page == "Registration Form":
         st.rerun()
 
 st.caption("Built with Streamlit • Professional Education Management • 2025")
+
