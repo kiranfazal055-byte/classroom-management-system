@@ -1,9 +1,10 @@
 [theme]
-primaryColor = "#4CAF50"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#E8F5E9"
-textColor = "#263238"
+base = "light"
+primaryColor = "#4F46E5"          # Deep indigo for buttons/highlights
+backgroundColor = "#FFFFFF"       # Pure white
+secondaryBackgroundColor = "#F3F4F6"  # Light gray for cards/sidebar
+textColor = "#1E293B"             # Dark slate for readability
 font = "sans serif"
 
-[server]
-headless = true
+[global]
+showWarningOnDirectExecution = false
