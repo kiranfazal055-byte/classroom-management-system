@@ -437,6 +437,19 @@ elif page == "Grades":
     with tab_view:
         df_grades = pd.read_sql('''
             SELECT g.id, s.name AS student, g.grade, g.remarks
+            FROM grades g
+            LEFT JOIN students s ON g.student_id = s.id
+        ''', conn)
+        if df_grades.empty or df_grades['student'].isna().all():
+            st.info("No grades added yet.")
+        else:
+            st.dataframe(df_grades.dropna(subset=['student']), use_container_width=True)
+
+    tab_view, tab_add, tab_update, tab_search, tab_delete = st.tabs(["📊 View", "➕ Add", "✏️ Update", "🔍 Search", "🗑️ Delete"])
+
+    with tab_view:
+        df_grades = pd.read_sql('''
+            SELECT g.id, s.name AS student, g.grade, g.remarks
             FROM grades g JOIN students s ON g.student_id = s.id
         ''', conn)
         st.dataframe(df_grades, use_container_width=True)
@@ -505,7 +518,7 @@ elif page == "Registration Form":
     courses = pd.read_sql("SELECT id, name, fee FROM courses", conn)
 
     if students.empty or teachers.empty or courses.empty:
-        st.warning("Please add students, teachers, and courses first.")
+        st.warning("Please add students, teachers, and courses first before registering.")
     else:
         with st.form("registration_form"):
             st.subheader("Register Student in Course")
@@ -526,15 +539,17 @@ elif page == "Registration Form":
                                (student_id, teacher_id, course_id, datetime.now().strftime("%Y-%m-%d")))
                 conn.commit()
                 success_message("completed", "Registration")
+                st.balloons()
 
     st.subheader("Current Registrations")
     df_reg = pd.read_sql('''
         SELECT r.id, s.name AS student, t.name AS teacher, c.name AS course, c.fee
         FROM registrations r
-        JOIN students s ON r.student_id = s.id
-        JOIN teachers t ON r.teacher_id = t.id
-        JOIN courses c ON r.course_id = c.id
+        LEFT JOIN students s ON r.student_id = s.id
+        LEFT JOIN teachers t ON r.teacher_id = t.id
+        LEFT JOIN courses c ON r.course_id = c.id
     ''', conn)
-    st.dataframe(df_reg, use_container_width=True)
-
-st.caption("Built with Streamlit • Beautiful & Professional Education Management • 2025")
+    if df_reg.empty or df_reg['student'].isna().all():
+        st.info("No registrations yet.")
+    else:
+        st.dataframe(df_reg.dropna(subset=['student']), use_container_width=True)
