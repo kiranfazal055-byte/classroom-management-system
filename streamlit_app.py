@@ -89,14 +89,14 @@ with st.sidebar:
     st.markdown("### Navigation")
     page = st.radio("Select Section", [
         "Dashboard",
-        "Students",          # 1st
-        "Teachers",          # 2nd
-        "Courses",           # 3rd
-        "Departments",       # 4th
+        "Students",
+        "Teachers",
+        "Courses",
+        "Departments",
         "Timetable",
         "Exams",
         "Grades",
-        "Registration Form"  # Last
+        "Registration Form"
     ], label_visibility="collapsed")
     st.markdown("---")
     st.caption("Professional Education Platform • 2025")
@@ -112,7 +112,7 @@ if page == "Dashboard":
     st.metric("Registrations", pd.read_sql("SELECT COUNT(*) FROM registrations", conn).iloc[0,0])
     st.metric("Scheduled Exams", pd.read_sql("SELECT COUNT(*) FROM exams", conn).iloc[0,0])
 
-# ======================= STUDENTS (1ST) =======================
+# ======================= STUDENTS =======================
 elif page == "Students":
     st.header("Student Management")
 
@@ -186,7 +186,7 @@ elif page == "Students":
                 success_message("deleted", f"Student ({student_name})")
                 st.rerun()
 
-# ======================= TEACHERS (2ND) =======================
+# ======================= TEACHERS =======================
 elif page == "Teachers":
     st.header("Teacher Management")
 
@@ -243,7 +243,7 @@ elif page == "Teachers":
                 success_message("deleted", f"Teacher ({teacher_name})")
                 st.rerun()
 
-# ======================= COURSES (3RD) =======================
+# ======================= COURSES =======================
 elif page == "Courses":
     st.header("Course Management")
 
@@ -290,8 +290,7 @@ elif page == "Courses":
                 submitted = st.form_submit_button("Update Course")
                 if submitted:
                     new_dept_id = depts[depts['name'] == new_dept]['id'].iloc[0]
-                    cursor.execute("UPDATE courses SET name = ?, department_id = ?, fee = ?, duration = ? WHERE id = ?", 
-                                   (new_name, new_dept_id, new_fee, new_duration, course_id))
+                    cursor.execute("UPDATE courses SET name = ?, department_id = ?, fee = ?, duration = ? WHERE id = ?", (new_name, new_dept_id, new_fee, new_duration, course_id))
                     conn.commit()
                     success_message("updated", "Course")
                     st.rerun()
@@ -319,7 +318,7 @@ elif page == "Courses":
                 success_message("deleted", f"Course ({course_name})")
                 st.rerun()
 
-# ======================= DEPARTMENTS (4TH) =======================
+# ======================= DEPARTMENTS =======================
 elif page == "Departments":
     st.header("Department Management")
 
@@ -441,7 +440,7 @@ elif page == "Timetable":
             st.dataframe(df_search, use_container_width=True)
 
     with tab_delete:
-        df_timetable = pd.read_sql("SELECT id, day, time_slot FROM timetable", conn)
+        df_timetable = pd.read_sql("SELECT id FROM timetable", conn)
         if not df_timetable.empty:
             entry_id = st.selectbox("Select Entry ID to Delete", df_timetable['id'])
             if st.button("🛑 Permanently Delete", type="primary"):
@@ -518,7 +517,7 @@ elif page == "Exams":
             st.dataframe(df_search, use_container_width=True)
 
     with tab_delete:
-        df_exams = pd.read_sql("SELECT id, exam_name FROM exams", conn)
+        df_exams = pd.read_sql("SELECT id FROM exams", conn)
         if not df_exams.empty:
             exam_id = st.selectbox("Select Exam ID to Delete", df_exams['id'])
             if st.button("🛑 Permanently Delete", type="primary"):
@@ -608,7 +607,7 @@ elif page == "Grades":
                 success_message("deleted", "Grade")
                 st.rerun()
 
-# ======================= REGISTRATION FORM (LAST) =======================
+# ======================= REGISTRATION FORM =======================
 elif page == "Registration Form":
     st.header("Student Registration Form")
 
@@ -659,15 +658,14 @@ elif page == "Registration Form":
         st.rerun()
 
 st.caption("Built with Streamlit • Beautiful & Professional Education Management • 2025")
-    
-       
-
   
 
+        
+     
+              
+      
+             
                
-
-
-
-
-
-
+              
+               
+  
