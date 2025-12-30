@@ -70,7 +70,15 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS courses (
     fee REAL NOT NULL,
     duration TEXT
 )''')
-cursor.execute('''CREATE TABLE IF NOT EXISTS teachers (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, subject TEXT, email TEXT , phone TEXT, qualification TEXT)''')
+cursor.execute('''CREATE TABLE IF NOT EXISTS teachers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    subject TEXT,
+    email TEXT UNIQUE,
+    phone TEXT,
+    qualification TEXT,
+    address TEXT
+)''')
 cursor.execute('''CREATE TABLE IF NOT EXISTS students (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, age INTEGER, gender TEXT, phone TEXT, email TEXT UNIQUE)''')
 cursor.execute('''CREATE TABLE IF NOT EXISTS exams (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -225,43 +233,68 @@ elif page == "Teachers":
     tab_view, tab_add, tab_update, tab_search, tab_delete = st.tabs(["📋 View", "➕ Add", "✏️ Update", "🔍 Search", "🗑️ Delete"])
 
     with tab_view:
-        df_teachers = pd.read_sql("SELECT id, name, subject,email,phone,qualification FROM teachers", conn)
+        df_teachers = pd.read_sql("SELECT id, name, subject, email, phone, qualification, address FROM teachers", conn)
         st.dataframe(df_teachers, use_container_width=True)
+        if st.button("➕ Add New Teacher", use_container_width=True):
+            st.rerun()
 
     with tab_add:
         with st.form("add_teacher"):
-            name = st.text_input("Teacher Name")
-            subject = st.text_input("Subject Taught")
-            email=st.text_input("Email")
-            phone=st.text_input("Phone number")
-           qualification=st.text_input("Qualification")
+            col1, col2 = st.columns(2)
+            with col1:
+                name = st.text_input("Teacher Name")
+                email = st.text_input("Email")
+                phone = st.text_input("Phone")
+            with col2:
+                subject = st.text_input("Subject Taught")
+                qualification = st.text_input("Qualification (e.g., M.Sc, PhD)")
+                address = st.text_area("Address")
             submitted = st.form_submit_button("Add Teacher")
-            if submitted and name:
-                cursor.execute("INSERT INTO teachers (name, subject, email, phone,qualification) VALUES (?, ?,?,?,?)", (name, subject,email, phone, qualification))
-                conn.commit()
-                success_message("added", "Teacher")
+            if submitted and name and email:
+                try:
+                    cursor.execute("""INSERT INTO teachers 
+                        (name, subject, email, phone, qualification, address) 
+                        VALUES (?, ?, ?, ?, ?, ?)""", 
+                        (name, subject, email, phone, qualification, address))
+                    conn.commit()
+                    success_message("added", "Teacher")
+                except sqlite3.IntegrityError:
+                    st.error("Email already exists or duplicate entry.")
 
     with tab_update:
-        df_teachers = pd.read_sql("SELECT id, name, subject,email,phone,qualification FROM teachers", conn)
+        df_teachers = pd.read_sql("SELECT id, name, subject, email, phone, qualification, address FROM teachers", conn)
         if not df_teachers.empty:
             teacher_id = st.selectbox("Select Teacher ID to Update", df_teachers['id'])
             current = df_teachers[df_teachers['id'] == teacher_id].iloc[0]
             with st.form("update_teacher"):
-                new_name = st.text_input("Name", value=current['name'])
-                new_subject = st.text_input("Subject", value=current['subject'])
-                new_email=st.text_input("email", value=current['email'])
-                new_phone=st.text_input("phone", value=current['phone'])
-                new_qualification=st.text_input("qualification", value=current['qualification'])
+                col1, col2 = st.columns(2)
+                with col1:
+                    new_name = st.text_input("Name", value=current['name'])
+                    new_email = st.text_input("Email", value=current['email'])
+                    new_phone = st.text_input("Phone", value=current['phone'])
+                with col2:
+                    new_subject = st.text_input("Subject", value=current['subject'])
+                    new_qualification = st.text_input("Qualification", value=current['qualification'])
+                    new_address = st.text_area("Address", value=current['address'])
                 submitted = st.form_submit_button("Update Teacher")
                 if submitted:
-                    cursor.execute("UPDATE teachers SET name = ?, subject = ?, email=?, phone=?, qualification=? WHERE id = ?", (new_name, new_subject,new_email, new_phone, new_qualification ,teacher_id))
+                    cursor.execute("""UPDATE teachers 
+                        SET name = ?, subject = ?, email = ?, phone = ?, qualification = ?, address = ? 
+                        WHERE id = ?""", 
+                        (new_name, new_subject, new_email, new_phone, new_qualification, new_address, teacher_id))
                     conn.commit()
                     success_message("updated", "Teacher")
+                    st.rerun()
+        else:
+            st.info("No teachers to update.")
 
     with tab_search:
-        search = st.text_input("Search by name or subject")
+        search = st.text_input("Search by name, email, subject, or qualification")
         if search:
-            df_search = pd.read_sql("SELECT id, name, subject FROM teachers WHERE name LIKE ? OR subject LIKE ?", conn, params=(f"%{search}%", f"%{search}%"))
+            df_search = pd.read_sql("""SELECT id, name, subject, email, phone, qualification, address 
+                FROM teachers 
+                WHERE name LIKE ? OR email LIKE ? OR subject LIKE ? OR qualification LIKE ?""", 
+                conn, params=(f"%{search}%", f"%{search}%", f"%{search}%", f"%{search}%"))
             st.dataframe(df_search, use_container_width=True)
 
     with tab_delete:
@@ -273,6 +306,9 @@ elif page == "Teachers":
                 cursor.execute("DELETE FROM teachers WHERE id = ?", (teacher_id,))
                 conn.commit()
                 success_message("deleted", f"Teacher ({teacher_name})")
+                st.rerun()
+        else:
+            st.info("No teachers to delete.")
 
 # ======================= COURSES (NO DEPARTMENT COLUMN) =======================
 elif page == "Courses":
@@ -458,5 +494,6 @@ elif page == "Registration Form":
                 conn.commit()
                 success_message("completed", "Registration")
  
+
 
 
