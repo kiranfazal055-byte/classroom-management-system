@@ -421,7 +421,6 @@ elif page == "Exams":
                 conn.commit()
                 success_message("deleted", f"Exam ({exam_name})")
 
-
 # ======================= REGISTRATION FORM =======================
 elif page == "Registration Form":
     st.header("Student Registration Form")
@@ -430,12 +429,8 @@ elif page == "Registration Form":
     teachers = pd.read_sql("SELECT id, name FROM teachers", conn)
     courses = pd.read_sql("SELECT id, name, fee FROM courses", conn)
 
-    if students.empty:
-        st.warning("Please add at least one student first.")
-    elif teachers.empty:
-        st.warning("Please add at least one teacher first.")
-    elif courses.empty:
-        st.warning("Please add at least one course first.")
+    if students.empty or teachers.empty or courses.empty:
+        st.warning("Please add students, teachers, and courses first.")
     else:
         with st.form("registration_form"):
             st.subheader("Register Student in Course")
@@ -456,108 +451,18 @@ elif page == "Registration Form":
                                (student_id, teacher_id, course_id, datetime.now().strftime("%Y-%m-%d")))
                 conn.commit()
                 success_message("completed", "Registration")
-                st.balloons()
 
-    # Current Registrations - FIXED DISPLAY
     st.subheader("Current Registrations")
     df_reg = pd.read_sql('''
-        SELECT r.id, s.name AS student, t.name AS teacher, c.name AS course, c.fee, r.registration_date
+        SELECT r.id, s.name AS student, t.name AS teacher, c.name AS course, c.fee
         FROM registrations r
-        LEFT JOIN students s ON r.student_id = s.id
-        LEFT JOIN teachers t ON r.teacher_id = t.id
-        LEFT JOIN courses c ON r.course_id = c.id
+        JOIN students s ON r.student_id = s.id
+        JOIN teachers t ON r.teacher_id = t.id
+        JOIN courses c ON r.course_id = c.id
     ''', conn)
-    if df_reg.empty or df_reg['student'].isna().all():
-        st.info("No registrations yet. Use the form above to add one.")
-    else:
-        st.dataframe(df_reg.dropna(subset=['student']), use_container_width=True)
+    st.dataframe(df_reg, use_container_width=True)
 
-    if st.button("Refresh Registrations"):
-        st.rerun()
-    tab_view, tab_add, tab_update, tab_search, tab_delete = st.tabs(["📋 View", "➕ Add", "✏️ Update", "🔍 Search", "🗑️ Delete"])
+st.caption("Built with Streamlit • Beautiful & Professional Education Management • 2025")
+           
 
-    # Load lookup tables
-    students = pd.read_sql("SELECT id, name FROM students", conn)
-    teachers = pd.read_sql("SELECT id, name FROM teachers", conn)
-    courses = pd.read_sql("SELECT id, name, fee FROM courses", conn)
-
-  with tab_view:
-    df_grades = pd.read_sql('''
-        SELECT g.id, s.name AS student, g.grade, g.remarks
-        FROM grades g
-        LEFT JOIN students s ON g.student_id = s.id
-    ''', conn)
-    if df_grades.empty or df_grades['student'].isna().all():
-        st.info("No grades added yet.")
-    else:
-        st.dataframe(df_grades.dropna(subset=['student']), use_container_width=True)
-    with tab_add:
-        if students.empty or teachers.empty or courses.empty:
-            st.warning("Please add students, teachers, and courses first.")
-        else:
-            with st.form("add_registration"):
-                student_name = st.selectbox("Select Student", students['name'].tolist())
-                teacher_name = st.selectbox("Select Teacher", teachers['name'].tolist())
-                course_name = st.selectbox("Select Course", courses['name'].tolist())
-
-                selected_course = courses[courses['name'] == course_name].iloc[0]
-                st.info(f"**Course Fee:** ${selected_course['fee']:.2f}")
-
-                submitted = st.form_submit_button("Add Registration")
-                if submitted:
-                    student_id = students[students['name'] == student_name]['id'].iloc[0]
-                    teacher_id = teachers[teachers['name'] == teacher_name]['id'].iloc[0]
-                    course_id = selected_course['id']
-
-                    cursor.execute("INSERT INTO registrations (student_id, teacher_id, course_id, registration_date) VALUES (?, ?, ?, ?)",
-                                   (student_id, teacher_id, course_id, datetime.now().strftime("%Y-%m-%d")))
-                    conn.commit()
-                    success_message("added", "Registration")
-
-    with tab_update:
-        df_reg = pd.read_sql('''
-            SELECT r.id, s.name AS student, t.name AS teacher, c.name AS course, r.registration_date
-            FROM registrations r
-            LEFT JOIN students s ON r.student_id = s.id
-            LEFT JOIN teachers t ON r.teacher_id = t.id
-            LEFT JOIN courses c ON r.course_id = c.id
-        ''', conn)
-        if not df_reg.empty:
-            reg_id = st.selectbox("Select Registration ID to Update", df_reg['id'])
-            current = df_reg[df_reg['id'] == reg_id].iloc[0]
-            with st.form("update_registration"):
-                new_student = st.selectbox("Student", students['name'].tolist(), index=students[students['name'] == current['student']].index[0])
-                new_teacher = st.selectbox("Teacher", teachers['name'].tolist(), index=teachers[teachers['name'] == current['teacher']].index[0])
-                new_course = st.selectbox("Course", courses['name'].tolist(), index=courses[courses['name'] == current['course']].index[0])
-                submitted = st.form_submit_button("Update Registration")
-                if submitted:
-                    new_s_id = students[students['name'] == new_student]['id'].iloc[0]
-                    new_t_id = teachers[teachers['name'] == new_teacher]['id'].iloc[0]
-                    new_c_id = courses[courses['name'] == new_course]['id'].iloc[0]
-                    cursor.execute("UPDATE registrations SET student_id = ?, teacher_id = ?, course_id = ? WHERE id = ?", (new_s_id, new_t_id, new_c_id, reg_id))
-                    conn.commit()
-                    success_message("updated", "Registration")
-
-    with tab_search:
-        search = st.text_input("Search by student, teacher, or course")
-        if search:
-            df_search = pd.read_sql('''
-                SELECT r.id, s.name AS student, t.name AS teacher, c.name AS course, c.fee, r.registration_date
-                FROM registrations r
-                LEFT JOIN students s ON r.student_id = s.id
-                LEFT JOIN teachers t ON r.teacher_id = t.id
-                LEFT JOIN courses c ON r.course_id = c.id
-                WHERE s.name LIKE ? OR t.name LIKE ? OR c.name LIKE ?
-            ''', conn, params=(f"%{search}%", f"%{search}%", f"%{search}%"))
-            st.dataframe(df_search, use_container_width=True)
-
-    with tab_delete:
-        df_reg = pd.read_sql("SELECT id FROM registrations", conn)
-        if not df_reg.empty:
-            reg_id = st.selectbox("Select Registration ID to Delete", df_reg['id'])
-            if st.button("🛑 Permanently Delete", type="primary"):
-                cursor.execute("DELETE FROM registrations WHERE id = ?", (reg_id,))
-                conn.commit()
-                success_message("deleted", "Registration")
-
-
+ 
