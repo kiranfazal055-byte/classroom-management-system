@@ -234,7 +234,7 @@ elif page == "Teachers":
             subject = st.text_input("Subject Taught")
             email=st.text_input("Email")
             phone=st.text_input("Phone number")
-              qualification=st.text_input("Qualification")
+           qualification=st.text_input("Qualification")
             submitted = st.form_submit_button("Add Teacher")
             if submitted and name:
                 cursor.execute("INSERT INTO teachers (name, subject, email, phone,qualification) VALUES (?, ?,?,?,?)", (name, subject,email, phone, qualification))
@@ -458,4 +458,5 @@ elif page == "Registration Form":
                 conn.commit()
                 success_message("completed", "Registration")
  
+
 
