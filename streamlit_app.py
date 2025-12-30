@@ -74,16 +74,14 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS departments (id INTEGER PRIMARY KEY
 cursor.execute('''CREATE TABLE IF NOT EXISTS courses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    department_id INTEGER,
     fee REAL NOT NULL,
-    duration TEXT,
-    FOREIGN KEY(department_id) REFERENCES departments(id)
+    duration TEXT
 )''')
 cursor.execute('''CREATE TABLE IF NOT EXISTS teachers (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, subject TEXT)''')
 cursor.execute('''CREATE TABLE IF NOT EXISTS students (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, age INTEGER, gender TEXT, phone TEXT, email TEXT UNIQUE)''')
-cursor.execute('''CREATE TABLE IF NOT EXISTS timetable (id INTEGER PRIMARY KEY AUTOINCREMENT, course_id INTEGER, day TEXT NOT NULL, time_slot TEXT NOT NULL, FOREIGN KEY(course_id) REFERENCES courses(id))''')
-cursor.execute('''CREATE TABLE IF NOT EXISTS exams (id INTEGER PRIMARY KEY AUTOINCREMENT, course_id INTEGER, exam_name TEXT NOT NULL, exam_date TEXT NOT NULL, exam_time TEXT NOT NULL, FOREIGN KEY(course_id) REFERENCES courses(id))''')
-cursor.execute('''CREATE TABLE IF NOT EXISTS grades (id INTEGER PRIMARY KEY AUTOINCREMENT, student_id INTEGER, course_id INTEGER, grade REAL NOT NULL, remarks TEXT, FOREIGN KEY(student_id) REFERENCES students(id), FOREIGN KEY(course_id) REFERENCES courses(id))''')
+cursor.execute('''CREATE TABLE IF NOT EXISTS timetable (id INTEGER PRIMARY KEY AUTOINCREMENT, course_id INTEGER, day TEXT NOT NULL, time_slot TEXT NOT NUL''')
+cursor.execute('''CREATE TABLE IF NOT EXISTS exams (id INTEGER PRIMARY KEY AUTOINCREMENT, exam_name TEXT NOT NULL, exam_date TEXT NOT NULL, exam_time TEXT NOT NULL''')
+cursor.execute('''CREATE TABLE IF NOT EXISTS grades (id INTEGER PRIMARY KEY AUTOINCREMENT, student_id INTEGER,  exam name TEXT NOT NULL, grade REAL NOT NULL, remarks TEXT, FOREIGN KEY(student_id) REFERENCES students(id), FOREIGN KEY(exam name) REFERENCESexams(exam_name))''')
 cursor.execute('''CREATE TABLE IF NOT EXISTS registrations (id INTEGER PRIMARY KEY AUTOINCREMENT, student_id INTEGER, teacher_id INTEGER, course_id INTEGER, registration_date TEXT, FOREIGN KEY(student_id) REFERENCES students(id), FOREIGN KEY(teacher_id) REFERENCES teachers(id), FOREIGN KEY(course_id) REFERENCES courses(id))''')
 conn.commit()
 
@@ -634,3 +632,4 @@ elif page == "Registration Form":
     st.dataframe(df_reg, use_container_width=True)
 
 st.caption("Built with Streamlit • Beautiful & Professional Education Management • 2025")
+
