@@ -78,13 +78,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS exams (
     exam_date TEXT NOT NULL,
     exam_time TEXT NOT NULL
 )''')
-cursor.execute('''CREATE TABLE IF NOT EXISTS grades (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_id INTEGER,
-    grade REAL NOT NULL,
-    remarks TEXT,
-    FOREIGN KEY(student_id) REFERENCES students(id)
-)''')
+
 cursor.execute('''CREATE TABLE IF NOT EXISTS registrations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id INTEGER,
@@ -113,7 +107,6 @@ with st.sidebar:
         "Courses",
         "Departments",
         "Exams",
-        "Grades",
         "Registration Form"
     ], label_visibility="collapsed")
     st.markdown("---")
@@ -428,84 +421,11 @@ elif page == "Exams":
                 conn.commit()
                 success_message("deleted", f"Exam ({exam_name})")
 
-# ======================= GRADES (NO COURSE_ID) =======================
-elif page == "Grades":
-    st.header("Grades Management")
-
-    tab_view, tab_add, tab_update, tab_search, tab_delete = st.tabs(["📊 View", "➕ Add", "✏️ Update", "🔍 Search", "🗑️ Delete"])
-
-    with tab_view:
-        df_grades = pd.read_sql('''
-            SELECT g.id, s.name AS student, g.grade, g.remarks
-            FROM grades g
-            LEFT JOIN students s ON g.student_id = s.id
-        ''', conn)
-        if df_grades.empty or df_grades['student'].isna().all():
-            st.info("No grades added yet.")
-        else:
-            st.dataframe(df_grades.dropna(subset=['student']), use_container_width=True)
-
- 
-    with tab_add:
-        students = pd.read_sql("SELECT id, name FROM students", conn)
-        if students.empty:
-            st.warning("Add students first.")
-        else:
-            with st.form("add_grade"):
-                student = st.selectbox("Student", students['name'])
-                grade = st.number_input("Grade (0-100)", min_value=0.0, max_value=100.0)
-                remarks = st.text_area("Remarks (optional)")
-                submitted = st.form_submit_button("Add Grade")
-                if submitted:
-                    s_id = students[students['name'] == student]['id'].iloc[0]
-                    cursor.execute("INSERT INTO grades (student_id, grade, remarks) VALUES (?, ?, ?)", (s_id, grade, remarks or None))
-                    conn.commit()
-                    success_message("added", "Grade")
-
-    with tab_update:
-        df_grades = pd.read_sql('''
-            SELECT g.id, s.name AS student, g.grade, g.remarks
-            FROM grades g JOIN students s ON g.student_id = s.id
-        ''', conn)
-        if not df_grades.empty:
-            grade_id = st.selectbox("Select Grade ID to Update", df_grades['id'])
-            current = df_grades[df_grades['id'] == grade_id].iloc[0]
-            students = pd.read_sql("SELECT id, name FROM students", conn)
-            with st.form("update_grade"):
-                new_student = st.selectbox("Student", students['name'], index=students[students['name'] == current['student']].index[0])
-                new_grade = st.number_input("Grade", value=float(current['grade']), min_value=0.0, max_value=100.0)
-                new_remarks = st.text_area("Remarks", value=current['remarks'] or "")
-                submitted = st.form_submit_button("Update Grade")
-                if submitted:
-                    new_s_id = students[students['name'] == new_student]['id'].iloc[0]
-                    cursor.execute("UPDATE grades SET student_id = ?, grade = ?, remarks = ? WHERE id = ?", (new_s_id, new_grade, new_remarks, grade_id))
-                    conn.commit()
-                    success_message("updated", "Grade")
-
-    with tab_search:
-        search = st.text_input("Search by student name")
-        if search:
-            df_search = pd.read_sql('''
-                SELECT g.id, s.name AS student, g.grade, g.remarks
-                FROM grades g JOIN students s ON g.student_id = s.id
-                WHERE s.name LIKE ?
-            ''', conn, params=(f"%{search}%",))
-            st.dataframe(df_search, use_container_width=True)
-
-    with tab_delete:
-        df_grades = pd.read_sql("SELECT id FROM grades", conn)
-        if not df_grades.empty:
-            grade_id = st.selectbox("Select Grade ID to Delete", df_grades['id'])
-            if st.button("🛑 Permanently Delete", type="primary"):
-                cursor.execute("DELETE FROM grades WHERE id = ?", (grade_id,))
-                conn.commit()
-                success_message("deleted", "Grade")
 
 # ======================= REGISTRATION FORM =======================
 elif page == "Registration Form":
     st.header("Student Registration Form")
 
-    # Load lookup tables
     students = pd.read_sql("SELECT id, name FROM students", conn)
     teachers = pd.read_sql("SELECT id, name FROM teachers", conn)
     courses = pd.read_sql("SELECT id, name, fee FROM courses", conn)
@@ -523,7 +443,6 @@ elif page == "Registration Form":
             teacher_name = st.selectbox("Select Teacher", teachers['name'].tolist())
             course_name = st.selectbox("Select Course", courses['name'].tolist())
 
-            # Auto-show fee
             selected_course = courses[courses['name'] == course_name].iloc[0]
             st.info(f"**Course Fee:** ${selected_course['fee']:.2f}")
 
@@ -539,7 +458,7 @@ elif page == "Registration Form":
                 success_message("completed", "Registration")
                 st.balloons()
 
-    # Current Registrations Table - FIXED DISPLAY
+    # Current Registrations - FIXED DISPLAY
     st.subheader("Current Registrations")
     df_reg = pd.read_sql('''
         SELECT r.id, s.name AS student, t.name AS teacher, c.name AS course, c.fee, r.registration_date
@@ -549,13 +468,12 @@ elif page == "Registration Form":
         LEFT JOIN courses c ON r.course_id = c.id
     ''', conn)
     if df_reg.empty or df_reg['student'].isna().all():
-        st.info("No registrations yet. Add one using the form above!")
+        st.info("No registrations yet. Use the form above to add one.")
     else:
         st.dataframe(df_reg.dropna(subset=['student']), use_container_width=True)
 
     if st.button("Refresh Registrations"):
         st.rerun()
-
     tab_view, tab_add, tab_update, tab_search, tab_delete = st.tabs(["📋 View", "➕ Add", "✏️ Update", "🔍 Search", "🗑️ Delete"])
 
     # Load lookup tables
@@ -641,4 +559,5 @@ elif page == "Registration Form":
                 cursor.execute("DELETE FROM registrations WHERE id = ?", (reg_id,))
                 conn.commit()
                 success_message("deleted", "Registration")
+
 
