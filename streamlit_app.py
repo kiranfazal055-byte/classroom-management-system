@@ -2,26 +2,34 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime
+import time
 
 # ======================= PAGE CONFIG & BEAUTIFUL THEME =======================
 st.set_page_config(page_title="Education Management System", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
-    .main .block-container { padding: 2rem; background: linear-gradient(to bottom, #f8fafc, #f1f5f9); }
+    .main .block-container { padding: 2rem; background: linear-gradient(to bottom, #f0f9ff, #e0f2fe); }
     .stButton > button {
-        background: linear-gradient(90deg, #4f46e5, #7c3aed);
+        background: linear-gradient(90deg, #2563eb, #3b82f6);
         color: white;
         border: none;
         border-radius: 12px;
         height: 3.2em;
         font-weight: 600;
-        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
-        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
     }
     .stButton > button:hover {
         transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4);
+        box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+    }
+    .metric-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 16px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        text-align: center;
+        border-top: 5px solid;
     }
     .card {
         background: white;
@@ -29,7 +37,7 @@ st.markdown("""
         border-radius: 20px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.08);
         margin-bottom: 2rem;
-        border-left: 5px solid #4f46e5;
+        border-left: 5px solid #2563eb;
     }
     h1, h2, h3 { color: #1e293b; font-weight: 700; }
     .stDataFrame { border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
@@ -42,10 +50,9 @@ st.markdown("""
         margin-right: 0.5rem;
     }
     .stTabs [data-baseweb="tab"][aria-selected="true"] {
-        background: #4f46e5;
+        background: #2563eb;
         color: white;
     }
-    .success-msg { background: #ecfdf5; color: #065f46; padding: 1rem; border-radius: 12px; border-left: 5px solid #10b981; margin: 1rem 0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -80,11 +87,13 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS grades (id INTEGER PRIMARY KEY AUTO
 cursor.execute('''CREATE TABLE IF NOT EXISTS registrations (id INTEGER PRIMARY KEY AUTOINCREMENT, student_id INTEGER, teacher_id INTEGER, course_id INTEGER, registration_date TEXT, FOREIGN KEY(student_id) REFERENCES students(id), FOREIGN KEY(teacher_id) REFERENCES teachers(id), FOREIGN KEY(course_id) REFERENCES courses(id))''')
 conn.commit()
 
-# Success message
+# Success message with 2-second delay
 def success_message(action, item):
-    st.markdown(f"<div class='success-msg'><strong>Success!</strong> {item} {action} successfully!</div>", unsafe_allow_html=True)
+    st.success(f"{item} {action} successfully!")
+    time.sleep(2)
+    st.rerun()
 
-# ======================= SIDEBAR - CORRECT ORDER =======================
+# ======================= SIDEBAR =======================
 with st.sidebar:
     st.markdown("### Navigation")
     page = st.radio("Select Section", [
@@ -101,16 +110,37 @@ with st.sidebar:
     st.markdown("---")
     st.caption("Professional Education Platform • 2025")
 
-# ======================= DASHBOARD =======================
+# ======================= DASHBOARD - COLORFUL & BEAUTIFUL =======================
 if page == "Dashboard":
     st.header("System Overview")
+
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Students", pd.read_sql("SELECT COUNT(*) FROM students", conn).iloc[0,0])
-    col2.metric("Teachers", pd.read_sql("SELECT COUNT(*) FROM teachers", conn).iloc[0,0])
-    col3.metric("Courses", pd.read_sql("SELECT COUNT(*) FROM courses", conn).iloc[0,0])
-    col4.metric("Departments", pd.read_sql("SELECT COUNT(*) FROM departments", conn).iloc[0,0])
-    st.metric("Registrations", pd.read_sql("SELECT COUNT(*) FROM registrations", conn).iloc[0,0])
-    st.metric("Scheduled Exams", pd.read_sql("SELECT COUNT(*) FROM exams", conn).iloc[0,0])
+    with col1:
+        st.markdown("<div class='metric-card' style='border-top-color: #ef4444;'>", unsafe_allow_html=True)
+        st.metric("Students", pd.read_sql("SELECT COUNT(*) FROM students", conn).iloc[0,0])
+        st.markdown("</div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown("<div class='metric-card' style='border-top-color: #3b82f6;'>", unsafe_allow_html=True)
+        st.metric("Teachers", pd.read_sql("SELECT COUNT(*) FROM teachers", conn).iloc[0,0])
+        st.markdown("</div>", unsafe_allow_html=True)
+    with col3:
+        st.markdown("<div class='metric-card' style='border-top-color: #10b981;'>", unsafe_allow_html=True)
+        st.metric("Courses", pd.read_sql("SELECT COUNT(*) FROM courses", conn).iloc[0,0])
+        st.markdown("</div>", unsafe_allow_html=True)
+    with col4:
+        st.markdown("<div class='metric-card' style='border-top-color: #f59e0b;'>", unsafe_allow_html=True)
+        st.metric("Departments", pd.read_sql("SELECT COUNT(*) FROM departments", conn).iloc[0,0])
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("<div class='metric-card' style='border-top-color: #8b5cf6;'>", unsafe_allow_html=True)
+        st.metric("Registrations", pd.read_sql("SELECT COUNT(*) FROM registrations", conn).iloc[0,0])
+        st.markdown("</div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown("<div class='metric-card' style='border-top-color: #ec4899;'>", unsafe_allow_html=True)
+        st.metric("Scheduled Exams", pd.read_sql("SELECT COUNT(*) FROM exams", conn).iloc[0,0])
+        st.markdown("</div>", unsafe_allow_html=True)
 
 # ======================= STUDENTS =======================
 elif page == "Students":
@@ -121,8 +151,6 @@ elif page == "Students":
     with tab_view:
         df_students = pd.read_sql("SELECT id, name, email, phone, age, gender FROM students", conn)
         st.dataframe(df_students, use_container_width=True)
-        if st.button("➕ Add New Student", use_container_width=True):
-            st.rerun()
 
     with tab_add:
         with st.form("add_student"):
@@ -140,7 +168,6 @@ elif page == "Students":
                     cursor.execute("INSERT INTO students (name, age, gender, phone, email) VALUES (?, ?, ?, ?, ?)", (name, age, gender, phone, email))
                     conn.commit()
                     success_message("added", "Student")
-                    st.rerun()
                 except sqlite3.IntegrityError:
                     st.error("Email already exists.")
 
@@ -160,13 +187,9 @@ elif page == "Students":
                     new_gender = st.selectbox("Gender", ["Male", "Female", "Other"], index=["Male", "Female", "Other"].index(current['gender']))
                 submitted = st.form_submit_button("Update Student")
                 if submitted:
-                    cursor.execute("UPDATE students SET name = ?, age = ?, gender = ?, phone = ?, email = ? WHERE id = ?", 
-                                   (new_name, new_age, new_gender, new_phone, new_email, student_id))
+                    cursor.execute("UPDATE students SET name = ?, age = ?, gender = ?, phone = ?, email = ? WHERE id = ?", (new_name, new_age, new_gender, new_phone, new_email, student_id))
                     conn.commit()
                     success_message("updated", "Student")
-                    st.rerun()
-        else:
-            st.info("No students to update.")
 
     with tab_search:
         search = st.text_input("Search by name, email, or phone")
@@ -184,7 +207,6 @@ elif page == "Students":
                 cursor.execute("DELETE FROM registrations WHERE student_id = ?", (student_id,))
                 conn.commit()
                 success_message("deleted", f"Student ({student_name})")
-                st.rerun()
 
 # ======================= TEACHERS =======================
 elif page == "Teachers":
@@ -195,8 +217,6 @@ elif page == "Teachers":
     with tab_view:
         df_teachers = pd.read_sql("SELECT id, name, subject FROM teachers", conn)
         st.dataframe(df_teachers, use_container_width=True)
-        if st.button("➕ Add New Teacher", use_container_width=True):
-            st.rerun()
 
     with tab_add:
         with st.form("add_teacher"):
@@ -207,7 +227,6 @@ elif page == "Teachers":
                 cursor.execute("INSERT INTO teachers (name, subject) VALUES (?, ?)", (name, subject))
                 conn.commit()
                 success_message("added", "Teacher")
-                st.rerun()
 
     with tab_update:
         df_teachers = pd.read_sql("SELECT id, name, subject FROM teachers", conn)
@@ -222,9 +241,6 @@ elif page == "Teachers":
                     cursor.execute("UPDATE teachers SET name = ?, subject = ? WHERE id = ?", (new_name, new_subject, teacher_id))
                     conn.commit()
                     success_message("updated", "Teacher")
-                    st.rerun()
-        else:
-            st.info("No teachers to update.")
 
     with tab_search:
         search = st.text_input("Search by name or subject")
@@ -241,7 +257,6 @@ elif page == "Teachers":
                 cursor.execute("DELETE FROM teachers WHERE id = ?", (teacher_id,))
                 conn.commit()
                 success_message("deleted", f"Teacher ({teacher_name})")
-                st.rerun()
 
 # ======================= COURSES =======================
 elif page == "Courses":
@@ -255,8 +270,6 @@ elif page == "Courses":
             FROM courses c LEFT JOIN departments d ON c.department_id = d.id
         ''', conn)
         st.dataframe(df_courses, use_container_width=True)
-        if st.button("➕ Add New Course", use_container_width=True):
-            st.rerun()
 
     with tab_add:
         depts = pd.read_sql("SELECT id, name FROM departments", conn)
@@ -271,7 +284,6 @@ elif page == "Courses":
                 cursor.execute("INSERT INTO courses (name, department_id, fee, duration) VALUES (?, ?, ?, ?)", (name, dept_id, fee, duration))
                 conn.commit()
                 success_message("added", "Course")
-                st.rerun()
 
     with tab_update:
         df_courses = pd.read_sql('''
@@ -293,9 +305,6 @@ elif page == "Courses":
                     cursor.execute("UPDATE courses SET name = ?, department_id = ?, fee = ?, duration = ? WHERE id = ?", (new_name, new_dept_id, new_fee, new_duration, course_id))
                     conn.commit()
                     success_message("updated", "Course")
-                    st.rerun()
-        else:
-            st.info("No courses to update.")
 
     with tab_search:
         search = st.text_input("Search by name")
@@ -316,7 +325,6 @@ elif page == "Courses":
                 cursor.execute("DELETE FROM courses WHERE id = ?", (course_id,))
                 conn.commit()
                 success_message("deleted", f"Course ({course_name})")
-                st.rerun()
 
 # ======================= DEPARTMENTS =======================
 elif page == "Departments":
@@ -327,8 +335,6 @@ elif page == "Departments":
     with tab_view:
         df_depts = pd.read_sql("SELECT id, name FROM departments", conn)
         st.dataframe(df_depts, use_container_width=True)
-        if st.button("➕ Add New Department", use_container_width=True):
-            st.rerun()
 
     with tab_add:
         with st.form("add_dept"):
@@ -339,7 +345,6 @@ elif page == "Departments":
                     cursor.execute("INSERT INTO departments (name) VALUES (?)", (name,))
                     conn.commit()
                     success_message("added", "Department")
-                    st.rerun()
                 except sqlite3.IntegrityError:
                     st.error("Department already exists.")
 
@@ -353,9 +358,6 @@ elif page == "Departments":
                 cursor.execute("UPDATE departments SET name = ? WHERE id = ?", (new_name, dept_id))
                 conn.commit()
                 success_message("updated", "Department")
-                st.rerun()
-        else:
-            st.info("No departments to update.")
 
     with tab_search:
         search = st.text_input("Search by name")
@@ -372,7 +374,6 @@ elif page == "Departments":
                 cursor.execute("DELETE FROM departments WHERE id = ?", (dept_id,))
                 conn.commit()
                 success_message("deleted", f"Department ({dept_name})")
-                st.rerun()
 
 # ======================= TIMETABLE =======================
 elif page == "Timetable":
@@ -386,8 +387,6 @@ elif page == "Timetable":
             FROM timetable t JOIN courses c ON t.course_id = c.id
         ''', conn)
         st.dataframe(df_timetable, use_container_width=True)
-        if st.button("➕ Add New Schedule", use_container_width=True):
-            st.rerun()
 
     with tab_add:
         courses = pd.read_sql("SELECT id, name FROM courses", conn)
@@ -404,7 +403,6 @@ elif page == "Timetable":
                     cursor.execute("INSERT INTO timetable (course_id, day, time_slot) VALUES (?, ?, ?)", (course_id, day, time_slot))
                     conn.commit()
                     success_message("added", "Timetable entry")
-                    st.rerun()
 
     with tab_update:
         df_timetable = pd.read_sql('''
@@ -425,9 +423,6 @@ elif page == "Timetable":
                     cursor.execute("UPDATE timetable SET course_id = ?, day = ?, time_slot = ? WHERE id = ?", (new_course_id, new_day, new_time, entry_id))
                     conn.commit()
                     success_message("updated", "Timetable entry")
-                    st.rerun()
-        else:
-            st.info("No timetable entries to update.")
 
     with tab_search:
         search = st.text_input("Search by course or day")
@@ -447,7 +442,6 @@ elif page == "Timetable":
                 cursor.execute("DELETE FROM timetable WHERE id = ?", (entry_id,))
                 conn.commit()
                 success_message("deleted", "Timetable entry")
-                st.rerun()
 
 # ======================= EXAMS =======================
 elif page == "Exams":
@@ -461,8 +455,6 @@ elif page == "Exams":
             FROM exams e JOIN courses c ON e.course_id = c.id
         ''', conn)
         st.dataframe(df_exams, use_container_width=True)
-        if st.button("➕ Add New Exam", use_container_width=True):
-            st.rerun()
 
     with tab_add:
         courses = pd.read_sql("SELECT id, name FROM courses", conn)
@@ -480,7 +472,6 @@ elif page == "Exams":
                     cursor.execute("INSERT INTO exams (course_id, exam_name, exam_date, exam_time) VALUES (?, ?, ?, ?)", (course_id, exam_name, str(exam_date), exam_time))
                     conn.commit()
                     success_message("added", "Exam")
-                    st.rerun()
 
     with tab_update:
         df_exams = pd.read_sql('''
@@ -502,9 +493,6 @@ elif page == "Exams":
                     cursor.execute("UPDATE exams SET course_id = ?, exam_name = ?, exam_date = ?, exam_time = ? WHERE id = ?", (new_course_id, new_name, str(new_date), new_time, exam_id))
                     conn.commit()
                     success_message("updated", "Exam")
-                    st.rerun()
-        else:
-            st.info("No exams to update.")
 
     with tab_search:
         search = st.text_input("Search by course or exam name")
@@ -524,7 +512,6 @@ elif page == "Exams":
                 cursor.execute("DELETE FROM exams WHERE id = ?", (exam_id,))
                 conn.commit()
                 success_message("deleted", "Exam")
-                st.rerun()
 
 # ======================= GRADES =======================
 elif page == "Grades":
@@ -538,8 +525,6 @@ elif page == "Grades":
             FROM grades g JOIN students s ON g.student_id = s.id JOIN courses c ON g.course_id = c.id
         ''', conn)
         st.dataframe(df_grades, use_container_width=True)
-        if st.button("➕ Add New Grade", use_container_width=True):
-            st.rerun()
 
     with tab_add:
         students = pd.read_sql("SELECT id, name FROM students", conn)
@@ -559,7 +544,6 @@ elif page == "Grades":
                     cursor.execute("INSERT INTO grades (student_id, course_id, grade, remarks) VALUES (?, ?, ?, ?)", (s_id, c_id, grade, remarks or None))
                     conn.commit()
                     success_message("added", "Grade")
-                    st.rerun()
 
     with tab_update:
         df_grades = pd.read_sql('''
@@ -583,9 +567,6 @@ elif page == "Grades":
                     cursor.execute("UPDATE grades SET student_id = ?, course_id = ?, grade = ?, remarks = ? WHERE id = ?", (new_s_id, new_c_id, new_grade, new_remarks, grade_id))
                     conn.commit()
                     success_message("updated", "Grade")
-                    st.rerun()
-        else:
-            st.info("No grades to update.")
 
     with tab_search:
         search = st.text_input("Search by student or course")
@@ -605,7 +586,6 @@ elif page == "Grades":
                 cursor.execute("DELETE FROM grades WHERE id = ?", (grade_id,))
                 conn.commit()
                 success_message("deleted", "Grade")
-                st.rerun()
 
 # ======================= REGISTRATION FORM =======================
 elif page == "Registration Form":
@@ -641,7 +621,6 @@ elif page == "Registration Form":
                                (student_id, teacher_id, course_id, datetime.now().strftime("%Y-%m-%d")))
                 conn.commit()
                 success_message("completed", "Registration")
-                st.balloons()
 
     st.subheader("Current Registrations")
     df_reg = pd.read_sql('''
@@ -654,18 +633,4 @@ elif page == "Registration Form":
     ''', conn)
     st.dataframe(df_reg, use_container_width=True)
 
-    if st.button("Refresh Registrations"):
-        st.rerun()
-
 st.caption("Built with Streamlit • Beautiful & Professional Education Management • 2025")
-  
-
-        
-     
-              
-      
-             
-               
-              
-               
-  
