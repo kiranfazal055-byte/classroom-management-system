@@ -9,19 +9,19 @@ st.set_page_config(page_title="Education Management System", page_icon="🎓", l
 
 st.markdown("""
 <style>
-    .main .block-container { padding: 2rem; background: linear-gradient(to bottom, #f8fafc, #f1f5f9); }
+    .main .block-container { padding: 2rem; background: linear-gradient(to bottom, #f0f9ff, #e0f2fe); }
     .stButton > button {
-        background: linear-gradient(90deg, #4f46e5, #7c3aed);
+        background: linear-gradient(90deg, #3b82f6, #1d4ed8);
         color: white;
         border: none;
         border-radius: 12px;
         height: 3.2em;
         font-weight: 600;
-        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
     }
     .stButton > button:hover {
         transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
     }
     .metric-card {
         background: white;
@@ -29,8 +29,9 @@ st.markdown("""
         border-radius: 16px;
         box-shadow: 0 8px 25px rgba(0,0,0,0.1);
         text-align: center;
-        border-top: 5px solid;
+        border-left: 6px solid;
     }
+    h1, h2, h3 { color: #1e293b; font-weight: 700; }
     .stDataFrame { border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
     .stTabs [data-baseweb="tab"] {
         font-weight: 600;
@@ -38,9 +39,10 @@ st.markdown("""
         padding: 1rem 2rem;
         background: #f1f5f9;
         border-radius: 12px 12px 0 0;
+        margin-right: 0.5rem;
     }
     .stTabs [data-baseweb="tab"][aria-selected="true"] {
-        background: #4f46e5;
+        background: #3b82f6;
         color: white;
     }
 </style>
@@ -52,7 +54,7 @@ with col1:
     st.image("https://images.unsplash.com/photo-1524178232363-1fb2b075b655?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80", width=130)
 with col2:
     st.markdown("<h1 style='margin-top: 35px; color: #1e293b;'>Education Management System</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #64748b; font-size: 1.2rem;'>Modern platform for managing students, teachers, courses, exams, grades & registrations</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #64748b; font-size: 1.2rem;'>Professional platform for students, teachers, courses, exams, grades & registrations</p>", unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -60,7 +62,7 @@ st.markdown("---")
 conn = sqlite3.connect('classroom.db', check_same_thread=False)
 cursor = conn.cursor()
 
-# Tables - removed department from courses, removed timetable, simplified joins
+# Tables (no department in courses, no course_id in exams/grades, no timetable)
 cursor.execute('''CREATE TABLE IF NOT EXISTS departments (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE)''')
 cursor.execute('''CREATE TABLE IF NOT EXISTS courses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,20 +74,16 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS teachers (id INTEGER PRIMARY KEY AU
 cursor.execute('''CREATE TABLE IF NOT EXISTS students (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, age INTEGER, gender TEXT, phone TEXT, email TEXT UNIQUE)''')
 cursor.execute('''CREATE TABLE IF NOT EXISTS exams (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    course_id INTEGER,
     exam_name TEXT NOT NULL,
     exam_date TEXT NOT NULL,
-    exam_time TEXT NOT NULL,
-    FOREIGN KEY(course_id) REFERENCES courses(id)
+    exam_time TEXT NOT NULL
 )''')
 cursor.execute('''CREATE TABLE IF NOT EXISTS grades (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id INTEGER,
-    course_id INTEGER,
     grade REAL NOT NULL,
     remarks TEXT,
-    FOREIGN KEY(student_id) REFERENCES students(id),
-    FOREIGN KEY(course_id) REFERENCES courses(id)
+    FOREIGN KEY(student_id) REFERENCES students(id)
 )''')
 cursor.execute('''CREATE TABLE IF NOT EXISTS registrations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -99,7 +97,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS registrations (
 )''')
 conn.commit()
 
-# Success message that stays for 2 seconds
+# Success message with 2-second delay
 def success_message(action, item):
     st.success(f"{item} {action} successfully!")
     time.sleep(2)
@@ -121,36 +119,42 @@ with st.sidebar:
     st.markdown("---")
     st.caption("Professional Education Platform • 2025")
 
-# ======================= DASHBOARD - NOW BEAUTIFUL & COLORFUL =======================
+# ======================= COLORFUL DASHBOARD =======================
 if page == "Dashboard":
     st.header("System Overview")
 
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.markdown('<div class="metric-card" style="border-top-color: #10b981;">', unsafe_allow_html=True)
-        st.metric("Students", pd.read_sql("SELECT COUNT(*) FROM students", conn).iloc[0,0])
+        st.markdown("<div class='metric-card' style='border-left-color: #3b82f6;'>", unsafe_allow_html=True)
+        st.markdown("### 👥 Students")
+        st.markdown(f"<h2 style='color: #3b82f6;'>{pd.read_sql('SELECT COUNT(*) FROM students', conn).iloc[0,0]}</h2>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
     with col2:
-        st.markdown('<div class="metric-card" style="border-top-color: #f59e0b;">', unsafe_allow_html=True)
-        st.metric("Teachers", pd.read_sql("SELECT COUNT(*) FROM teachers", conn).iloc[0,0])
+        st.markdown("<div class='metric-card' style='border-left-color: #10b981;'>", unsafe_allow_html=True)
+        st.markdown("### 👩‍🏫 Teachers")
+        st.markdown(f"<h2 style='color: #10b981;'>{pd.read_sql('SELECT COUNT(*) FROM teachers', conn).iloc[0,0]}</h2>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
     with col3:
-        st.markdown('<div class="metric-card" style="border-top-color: #3b82f6;">', unsafe_allow_html=True)
-        st.metric("Courses", pd.read_sql("SELECT COUNT(*) FROM courses", conn).iloc[0,0])
+        st.markdown("<div class='metric-card' style='border-left-color: #f59e0b;'>", unsafe_allow_html=True)
+        st.markdown("### 📚 Courses")
+        st.markdown(f"<h2 style='color: #f59e0b;'>{pd.read_sql('SELECT COUNT(*) FROM courses', conn).iloc[0,0]}</h2>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
     with col4:
-        st.markdown('<div class="metric-card" style="border-top-color: #8b5cf6;">', unsafe_allow_html=True)
-        st.metric("Departments", pd.read_sql("SELECT COUNT(*) FROM departments", conn).iloc[0,0])
+        st.markdown("<div class='metric-card' style='border-left-color: #ef4444;'>", unsafe_allow_html=True)
+        st.markdown("### 🏢 Departments")
+        st.markdown(f"<h2 style='color: #ef4444;'>{pd.read_sql('SELECT COUNT(*) FROM departments', conn).iloc[0,0]}</h2>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<div class="metric-card" style="border-top-color: #ec4899;">', unsafe_allow_html=True)
-        st.metric("Total Registrations", pd.read_sql("SELECT COUNT(*) FROM registrations", conn).iloc[0,0])
+        st.markdown("<div class='metric-card' style='border-left-color: #8b5cf6;'>", unsafe_allow_html=True)
+        st.markdown("### 📝 Registrations")
+        st.markdown(f"<h2 style='color: #8b5cf6;'>{pd.read_sql('SELECT COUNT(*) FROM registrations', conn).iloc[0,0]}</h2>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
     with col2:
-        st.markdown('<div class="metric-card" style="border-top-color: #06b6d4;">', unsafe_allow_html=True)
-        st.metric("Scheduled Exams", pd.read_sql("SELECT COUNT(*) FROM exams", conn).iloc[0,0])
+        st.markdown("<div class='metric-card' style='border-left-color: #ec4899;'>", unsafe_allow_html=True)
+        st.markdown("### 📅 Scheduled Exams")
+        st.markdown(f"<h2 style='color: #ec4899;'>{pd.read_sql('SELECT COUNT(*) FROM exams', conn).iloc[0,0]}</h2>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
 # ======================= STUDENTS =======================
@@ -372,113 +376,115 @@ elif page == "Departments":
                 conn.commit()
                 success_message("deleted", f"Department ({dept_name})")
 
-# ======================= EXAMS (COURSE ID ONLY) =======================
+# ======================= EXAMS (NO COURSE_ID) =======================
 elif page == "Exams":
     st.header("Exam Management")
 
     tab_view, tab_add, tab_update, tab_search, tab_delete = st.tabs(["📝 View", "➕ Add", "✏️ Update", "🔍 Search", "🗑️ Delete"])
 
     with tab_view:
-        df_exams = pd.read_sql("SELECT id, course_id, exam_name, exam_date, exam_time FROM exams", conn)
+        df_exams = pd.read_sql("SELECT id, exam_name, exam_date, exam_time FROM exams", conn)
         st.dataframe(df_exams, use_container_width=True)
 
     with tab_add:
-        courses = pd.read_sql("SELECT id, name FROM courses", conn)
-        if courses.empty:
-            st.warning("Add courses first.")
-        else:
-            with st.form("add_exam"):
-                course_id = st.selectbox("Course ID", courses['id'])
-                exam_name = st.text_input("Exam Name")
-                exam_date = st.date_input("Exam Date")
-                exam_time = st.text_input("Exam Time")
-                submitted = st.form_submit_button("Add Exam")
-                if submitted:
-                    cursor.execute("INSERT INTO exams (course_id, exam_name, exam_date, exam_time) VALUES (?, ?, ?, ?)", (course_id, exam_name, str(exam_date), exam_time))
-                    conn.commit()
-                    success_message("added", "Exam")
+        with st.form("add_exam"):
+            exam_name = st.text_input("Exam Name")
+            exam_date = st.date_input("Exam Date")
+            exam_time = st.text_input("Exam Time")
+            submitted = st.form_submit_button("Add Exam")
+            if submitted and exam_name:
+                cursor.execute("INSERT INTO exams (exam_name, exam_date, exam_time) VALUES (?, ?, ?)", (exam_name, str(exam_date), exam_time))
+                conn.commit()
+                success_message("added", "Exam")
 
     with tab_update:
-        df_exams = pd.read_sql("SELECT id, course_id, exam_name, exam_date, exam_time FROM exams", conn)
+        df_exams = pd.read_sql("SELECT id, exam_name, exam_date, exam_time FROM exams", conn)
         if not df_exams.empty:
             exam_id = st.selectbox("Select Exam ID to Update", df_exams['id'])
             current = df_exams[df_exams['id'] == exam_id].iloc[0]
-            courses = pd.read_sql("SELECT id FROM courses", conn)
             with st.form("update_exam"):
-                new_course_id = st.selectbox("Course ID", courses['id'], index=courses[courses['id'] == current['course_id']].index[0] if current['course_id'] in courses['id'].values else 0)
                 new_name = st.text_input("Exam Name", value=current['exam_name'])
                 new_date = st.date_input("Exam Date", value=datetime.strptime(current['exam_date'], "%Y-%m-%d"))
                 new_time = st.text_input("Exam Time", value=current['exam_time'])
                 submitted = st.form_submit_button("Update Exam")
                 if submitted:
-                    cursor.execute("UPDATE exams SET course_id = ?, exam_name = ?, exam_date = ?, exam_time = ? WHERE id = ?", (new_course_id, new_name, str(new_date), new_time, exam_id))
+                    cursor.execute("UPDATE exams SET exam_name = ?, exam_date = ?, exam_time = ? WHERE id = ?", (new_name, str(new_date), new_time, exam_id))
                     conn.commit()
                     success_message("updated", "Exam")
 
     with tab_search:
         search = st.text_input("Search by exam name")
         if search:
-            df_search = pd.read_sql("SELECT id, course_id, exam_name, exam_date, exam_time FROM exams WHERE exam_name LIKE ?", conn, params=(f"%{search}%",))
+            df_search = pd.read_sql("SELECT id, exam_name, exam_date, exam_time FROM exams WHERE exam_name LIKE ?", conn, params=(f"%{search}%",))
             st.dataframe(df_search, use_container_width=True)
 
     with tab_delete:
-        df_exams = pd.read_sql("SELECT id FROM exams", conn)
+        df_exams = pd.read_sql("SELECT id, exam_name FROM exams", conn)
         if not df_exams.empty:
             exam_id = st.selectbox("Select Exam ID to Delete", df_exams['id'])
+            exam_name = df_exams[df_exams['id'] == exam_id]['exam_name'].iloc[0]
             if st.button("🛑 Permanently Delete", type="primary"):
                 cursor.execute("DELETE FROM exams WHERE id = ?", (exam_id,))
                 conn.commit()
-                success_message("deleted", "Exam")
+                success_message("deleted", f"Exam ({exam_name})")
 
-# ======================= GRADES (COURSE ID ONLY) =======================
+# ======================= GRADES (NO COURSE_ID) =======================
 elif page == "Grades":
     st.header("Grades Management")
 
     tab_view, tab_add, tab_update, tab_search, tab_delete = st.tabs(["📊 View", "➕ Add", "✏️ Update", "🔍 Search", "🗑️ Delete"])
 
     with tab_view:
-        df_grades = pd.read_sql("SELECT id, student_id, course_id, grade, remarks FROM grades", conn)
+        df_grades = pd.read_sql('''
+            SELECT g.id, s.name AS student, g.grade, g.remarks
+            FROM grades g JOIN students s ON g.student_id = s.id
+        ''', conn)
         st.dataframe(df_grades, use_container_width=True)
 
     with tab_add:
-        students = pd.read_sql("SELECT id FROM students", conn)
-        courses = pd.read_sql("SELECT id FROM courses", conn)
-        if students.empty or courses.empty:
-            st.warning("Add students and courses first.")
+        students = pd.read_sql("SELECT id, name FROM students", conn)
+        if students.empty:
+            st.warning("Add students first.")
         else:
             with st.form("add_grade"):
-                student_id = st.selectbox("Student ID", students['id'])
-                course_id = st.selectbox("Course ID", courses['id'])
+                student = st.selectbox("Student", students['name'])
                 grade = st.number_input("Grade (0-100)", min_value=0.0, max_value=100.0)
                 remarks = st.text_area("Remarks (optional)")
                 submitted = st.form_submit_button("Add Grade")
                 if submitted:
-                    cursor.execute("INSERT INTO grades (student_id, course_id, grade, remarks) VALUES (?, ?, ?, ?)", (student_id, course_id, grade, remarks or None))
+                    s_id = students[students['name'] == student]['id'].iloc[0]
+                    cursor.execute("INSERT INTO grades (student_id, grade, remarks) VALUES (?, ?, ?)", (s_id, grade, remarks or None))
                     conn.commit()
                     success_message("added", "Grade")
 
     with tab_update:
-        df_grades = pd.read_sql("SELECT id, student_id, course_id, grade, remarks FROM grades", conn)
+        df_grades = pd.read_sql('''
+            SELECT g.id, s.name AS student, g.grade, g.remarks
+            FROM grades g JOIN students s ON g.student_id = s.id
+        ''', conn)
         if not df_grades.empty:
             grade_id = st.selectbox("Select Grade ID to Update", df_grades['id'])
             current = df_grades[df_grades['id'] == grade_id].iloc[0]
-            students = pd.read_sql("SELECT id FROM students", conn)
-            courses = pd.read_sql("SELECT id FROM courses", conn)
+            students = pd.read_sql("SELECT id, name FROM students", conn)
             with st.form("update_grade"):
-                new_student_id = st.selectbox("Student ID", students['id'], index=students[students['id'] == current['student_id']].index[0] if current['student_id'] in students['id'].values else 0)
-                new_course_id = st.selectbox("Course ID", courses['id'], index=courses[courses['id'] == current['course_id']].index[0] if current['course_id'] in courses['id'].values else 0)
+                new_student = st.selectbox("Student", students['name'], index=students[students['name'] == current['student']].index[0])
                 new_grade = st.number_input("Grade", value=float(current['grade']), min_value=0.0, max_value=100.0)
                 new_remarks = st.text_area("Remarks", value=current['remarks'] or "")
                 submitted = st.form_submit_button("Update Grade")
                 if submitted:
-                    cursor.execute("UPDATE grades SET student_id = ?, course_id = ?, grade = ?, remarks = ? WHERE id = ?", (new_student_id, new_course_id, new_grade, new_remarks, grade_id))
+                    new_s_id = students[students['name'] == new_student]['id'].iloc[0]
+                    cursor.execute("UPDATE grades SET student_id = ?, grade = ?, remarks = ? WHERE id = ?", (new_s_id, new_grade, new_remarks, grade_id))
                     conn.commit()
                     success_message("updated", "Grade")
 
     with tab_search:
-        search = st.text_input("Search by remarks")
+        search = st.text_input("Search by student name")
         if search:
-            df_search = pd.read_sql("SELECT id, student_id, course_id, grade, remarks FROM grades WHERE remarks LIKE ?", conn, params=(f"%{search}%",))
+            df_search = pd.read_sql('''
+                SELECT g.id, s.name AS student, g.grade, g.remarks
+                FROM grades g JOIN students s ON g.student_id = s.id
+                WHERE s.name LIKE ?
+            ''', conn, params=(f"%{search}%",))
             st.dataframe(df_search, use_container_width=True)
 
     with tab_delete:
@@ -520,7 +526,6 @@ elif page == "Registration Form":
                                (student_id, teacher_id, course_id, datetime.now().strftime("%Y-%m-%d")))
                 conn.commit()
                 success_message("completed", "Registration")
-                st.balloons()
 
     st.subheader("Current Registrations")
     df_reg = pd.read_sql('''
