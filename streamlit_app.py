@@ -48,10 +48,8 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS teachers (
 cursor.execute('''CREATE TABLE IF NOT EXISTS courses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    department_id INTEGER,
     fee REAL NOT NULL,
-    duration TEXT,  -- New column for duration (e.g., "3 months", "6 weeks", "1 year")
-    FOREIGN KEY(department_id) REFERENCES departments(id)
+    duration TEXT  -- New column for duration (e.g., "3 months", "6 weeks", "1 year")  
 )''')
 
 cursor.execute('''CREATE TABLE IF NOT EXISTS departments (
@@ -127,7 +125,7 @@ if page == "Dashboard":
 elif page == "Students":
     st.header("Student Management")
 
-    tab_view, tab_add, tab_search, tab_delete = st.tabs(["📋 View", "➕ Add", "🔍 Search", "🗑️ Delete"])
+    tab_view, tab_add,tab_update, tab_search, tab_delete = st.tabs(["📋 View", "➕ Add","✏️ Update", "🔍 Search", "🗑️ Delete"])
 
     with tab_view:
         st.subheader("All Students")
@@ -188,7 +186,7 @@ elif page == "Students":
 elif page == "Teachers":
     st.header("Teacher Management")
 
-    tab_view, tab_add, tab_search, tab_delete = st.tabs(["📋 View", "➕ Add", "🔍 Search", "🗑️ Delete"])
+    tab_view, tab_add,tab_update, tab_search, tab_delete = st.tabs(["📋 View", "➕ Add","✏️ Update", "🔍 Search", "🗑️ Delete"])
 
     with tab_view:
         st.subheader("All Teachers")
@@ -234,7 +232,7 @@ elif page == "Teachers":
 elif page == "Courses":
     st.header("Course Management")
 
-    tab_view, tab_add, tab_search, tab_delete = st.tabs(["📋 View", "➕ Add", "🔍 Search", "🗑️ Delete"])
+    tab_view, tab_add, tab_update,tab_search, tab_delete = st.tabs(["📋 View", "➕ Add","✏️ Update", "🔍 Search", "🗑️ Delete"])
 
     with tab_view:
         df_courses = pd.read_sql('''
@@ -292,7 +290,7 @@ elif page == "Courses":
 elif page == "Departments":
     st.header("Department Management")
 
-    tab_view, tab_add, tab_search, tab_delete = st.tabs(["📋 View", "➕ Add", "🔍 Search", "🗑️ Delete"])
+    tab_view, tab_add,tab_update, tab_search, tab_delete = st.tabs(["📋 View", "➕ Add","✏️ Update", "🔍 Search", "🗑️ Delete"])
 
     with tab_view:
         st.subheader("All Departments")
@@ -340,7 +338,7 @@ elif page == "Departments":
 elif page == "Timetable":
     st.header("Course Timetable Management")
 
-    tab_view, tab_add = st.tabs(["📅 View Timetable", "➕ Add Schedule"])
+    tab_view, tab_add,tab_update = st.tabs(["📅 View Timetable", "➕ Add Schedule","✏️ Update"])
 
     with tab_view:
         df_timetable = pd.read_sql('''
@@ -371,7 +369,7 @@ elif page == "Timetable":
 elif page == "Exams":
     st.header("Exam Schedule Management")
 
-    tab_view, tab_add = st.tabs(["📝 View Exams", "➕ Schedule Exam"])
+    tab_view, tab_add, tab_update = st.tabs(["📝 View Exams", "➕ Schedule Exam","✏️ Update"])
 
     with tab_view:
         df_exams = pd.read_sql('''
@@ -404,7 +402,7 @@ elif page == "Exams":
 elif page == "Grades":
     st.header("Student Grades Management")
 
-    tab_view, tab_add = st.tabs(["📊 View Grades", "➕ Add Grade"])
+    tab_view, tab_add, tab_update = st.tabs(["📊 View Grades", "➕ Add Grade","✏️ Update"])
 
     with tab_view:
         df_grades = pd.read_sql('''
@@ -499,6 +497,7 @@ st.caption("Built with Streamlit • Complete Education Management • 2025")
   
 
                
+
 
 
 
