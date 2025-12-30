@@ -502,8 +502,59 @@ elif page == "Grades":
                 success_message("deleted", "Grade")
 
 # ======================= REGISTRATION FORM =======================
-elif page == "Registrations":
-    st.header("Registration Management")
+elif page == "Registration Form":
+    st.header("Student Registration Form")
+
+    # Load lookup tables
+    students = pd.read_sql("SELECT id, name FROM students", conn)
+    teachers = pd.read_sql("SELECT id, name FROM teachers", conn)
+    courses = pd.read_sql("SELECT id, name, fee FROM courses", conn)
+
+    if students.empty:
+        st.warning("Please add at least one student first.")
+    elif teachers.empty:
+        st.warning("Please add at least one teacher first.")
+    elif courses.empty:
+        st.warning("Please add at least one course first.")
+    else:
+        with st.form("registration_form"):
+            st.subheader("Register Student in Course")
+            student_name = st.selectbox("Select Student", students['name'].tolist())
+            teacher_name = st.selectbox("Select Teacher", teachers['name'].tolist())
+            course_name = st.selectbox("Select Course", courses['name'].tolist())
+
+            # Auto-show fee
+            selected_course = courses[courses['name'] == course_name].iloc[0]
+            st.info(f"**Course Fee:** ${selected_course['fee']:.2f}")
+
+            submitted = st.form_submit_button("Complete Registration")
+            if submitted:
+                student_id = students[students['name'] == student_name]['id'].iloc[0]
+                teacher_id = teachers[teachers['name'] == teacher_name]['id'].iloc[0]
+                course_id = selected_course['id']
+
+                cursor.execute("INSERT INTO registrations (student_id, teacher_id, course_id, registration_date) VALUES (?, ?, ?, ?)",
+                               (student_id, teacher_id, course_id, datetime.now().strftime("%Y-%m-%d")))
+                conn.commit()
+                success_message("completed", "Registration")
+                st.balloons()
+
+    # Current Registrations Table - FIXED DISPLAY
+    st.subheader("Current Registrations")
+    df_reg = pd.read_sql('''
+        SELECT r.id, s.name AS student, t.name AS teacher, c.name AS course, c.fee, r.registration_date
+        FROM registrations r
+        LEFT JOIN students s ON r.student_id = s.id
+        LEFT JOIN teachers t ON r.teacher_id = t.id
+        LEFT JOIN courses c ON r.course_id = c.id
+    ''', conn)
+    if df_reg.empty or df_reg['student'].isna().all():
+        st.info("No registrations yet. Add one using the form above!")
+    else:
+        st.dataframe(df_reg.dropna(subset=['student']), use_container_width=True)
+
+    if st.button("Refresh Registrations"):
+        st.rerun()
 
     tab_view, tab_add, tab_update, tab_search, tab_delete = st.tabs(["📋 View", "➕ Add", "✏️ Update", "🔍 Search", "🗑️ Delete"])
 
@@ -512,19 +563,16 @@ elif page == "Registrations":
     teachers = pd.read_sql("SELECT id, name FROM teachers", conn)
     courses = pd.read_sql("SELECT id, name, fee FROM courses", conn)
 
-    with tab_view:
-        df_reg = pd.read_sql('''
-            SELECT r.id, s.name AS student, t.name AS teacher, c.name AS course, c.fee, r.registration_date
-            FROM registrations r
-            LEFT JOIN students s ON r.student_id = s.id
-            LEFT JOIN teachers t ON r.teacher_id = t.id
-            LEFT JOIN courses c ON r.course_id = c.id
-        ''', conn)
-        if df_reg.empty or df_reg['student'].isna().all():
-            st.info("No registrations yet.")
-        else:
-            st.dataframe(df_reg.dropna(subset=['student']), use_container_width=True)
-
+  with tab_view:
+    df_grades = pd.read_sql('''
+        SELECT g.id, s.name AS student, g.grade, g.remarks
+        FROM grades g
+        LEFT JOIN students s ON g.student_id = s.id
+    ''', conn)
+    if df_grades.empty or df_grades['student'].isna().all():
+        st.info("No grades added yet.")
+    else:
+        st.dataframe(df_grades.dropna(subset=['student']), use_container_width=True)
     with tab_add:
         if students.empty or teachers.empty or courses.empty:
             st.warning("Please add students, teachers, and courses first.")
@@ -593,3 +641,4 @@ elif page == "Registrations":
                 cursor.execute("DELETE FROM registrations WHERE id = ?", (reg_id,))
                 conn.commit()
                 success_message("deleted", "Registration")
+
